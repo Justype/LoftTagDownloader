@@ -284,8 +284,8 @@ def ProcessResponseText(text):
                 f.write("文章图像链接：\n")
                 f.writelines(imgLinks)
                 f.close()
-            if isDownloadBlogImg:
-                DownloadImgs(fileName, imgLinks)
+        if isDownloadBlogImg:
+            DownloadImgs(fileName, imgLinks)
         # endregion
 
     # 返回最后博客的发布时间
