@@ -32,7 +32,7 @@ i = 0               # 循环变量      默认 0      每次递增 请求数
 lastTime = '0'      # 记录时间      默认 '0'
 requestsNum = 100   # 每次请求博客的个数
 # 如果下图片，可以设置的小一点
-# 如果规定了记录时间，建议设置小一点的请求数
+# 如果规定了最小时间，建议设置小一点的请求数
 
 #endregion
 
@@ -272,7 +272,7 @@ def ProcessResponseText(text):
             continue
         contentText = BeautifulSoup(content, "html.parser").get_text()
         contentLinks = ProcessHtmlLinks(content, fileName)
-        #  是否下载博客               长度大于要求                          博客有图片，是否下载              图片为空，下载文章
+        #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章
         if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []):
             with open(textFile, "a+", encoding="utf-8", errors="ignore") as f:
                 f.write("标题：" + title + '\n')
