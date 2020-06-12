@@ -140,11 +140,11 @@ def DownloadFile(fullFileName, url):
         except (ConnectionError, ReadTimeout) as e:
             # 写文本的时候可能会出现异常，可能是文件名的问题，如果出现，请提交issue
             try:
-                LogEvent("下载失败"+ str(i), "目标文件:" + fullFileName + "\nUrl:" + url + "\n错误信息" + e)
+                LogEvent("下载失败"+ str(i), "目标文件:" + fullFileName + "\nUrl:" + url)
             except UnicodeEncodeError:
-                logEvent("下载失败"+ str(i), "目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url + "\n错误信息" + e)
+                logEvent("下载失败"+ str(i), "目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url)
                 # 实在不行，使用下面的一行，只log Url
-                # logEvent("下载失败"+ str(i), "Url:" + url + "\n错误信息" + e)
+                # logEvent("下载失败"+ str(i), "Url:" + url)
     
 def ProcessHtmlLinks(html, fileName):
     '''
