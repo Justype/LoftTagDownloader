@@ -59,7 +59,7 @@ def LogEvent(logType, logInfo):
     :param logInfo:日志内容
     '''
     with open(logFile, 'a+', encoding='utf-8') as f:
-        f.write("【" + logType + "】\n" + logInfo + '\n' )
+        f.write("【" + logType + "】\t" + logInfo + '\n' )
         f.close
 
 
@@ -174,8 +174,11 @@ def DownloadImgs(fileName, imgLinks):
     counter = 0
     while imgLinks != []:
         imgLink = imgLinks.pop(0)
-        DownloadFile(fileName + '_' + str(counter) +
-                     imgPattern.findall(imgLink)[0], imgLink)
+        imgExtencion = imgPattern.findall(imgLink)
+        # 有可能没有 要求的后缀名
+        if imgExtencion == []:
+            continue
+        DownloadFile(fileName + '_' + str(counter) + imgExtencion[0], imgLink)
         counter += 1
 
 
@@ -218,7 +221,6 @@ def ProcessResponseText(text):
         if int(hot) < hotMin:
             # 热度小于设定值，跳过
             continue
-        # endregion
 
         # 先获取博客id
         blogIdPattern = re.compile(blog + r'\.blogId=([0-9]+);')
@@ -226,6 +228,7 @@ def ProcessResponseText(text):
         # 再根据博客id，获取用户名
         blogNickNamePattern = re.compile(blogId + r'.*?blogNickName="(.*?)"')
         blogNickName = blogNickNamePattern.findall(text)[0]
+        # endregion
 
         # region 可能为空的数据
         # 获取 标题
@@ -320,7 +323,7 @@ while True:
     response = requests.post(url=url, data=payload, headers=headers)
     response.encoding = "unicode_escape"
     print("开始下载\t" + str(i) + '\t' + lastTime)
-    LogEvent("开始下载", "i="+str(i)+ ",lastTime=" +lastTime)
+    LogEvent("开始下载", "i="+str(i)+ ", lastTime=" +lastTime)
     i += requestsNum
     lastTime = ProcessResponseText(response.text)
     if(lastTime == None):
