@@ -9,7 +9,7 @@
 
 ## 使用方法
 
-修改可设置的部分
+下载`LoftTagDownloader.py`，修改可设置的部分，直接运行
 
 ```python
 #region 可设置
