@@ -13,8 +13,8 @@ blogMinDate = ""    # 最小时间 YYYY-mm-dd
 ignoreTags = [ ]    # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
 
 
-isDownloadBlogImg = False    # 是否下载  博客图片
-isDownloadLinkImg = False    # 是否下载  外链图片
+isDownloadBlogImg = True    # 是否下载  博客图片
+isDownloadLinkImg = True    # 是否下载  外链图片
 isDownloadBlogContent = True    #是否下载  文章
 isDownloadBlogWhileItHasImg = False   #如果博客有图片，是否下载文章
 blogMinLength = 0       # 文章最小长度
@@ -26,9 +26,9 @@ mainPath = os.path.join(os.path.expanduser('~'), "Desktop", "Lofter")
 # mainPath = "D:\\Lofter"
 
 # 如果断了可以看 日志，然后修改下面两个继续
-i = 0               # 循环变量      默认 0      每次递增 请求数
-lastTime = '0'      # 记录时间      默认 '0'
-requestsNum = 100   # 每次请求博客的个数
+requestPosition = 0     # 请求位置      默认 0      每次递增 请求数
+requestTime = '0'       # 记录时间      默认 '0'
+requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连
 
 #endregion
@@ -55,7 +55,7 @@ def LogEvent(logType, logInfo):
     :param logInfo:日志内容
     '''
     with open(logFile, 'a+', encoding='utf-8') as f:
-        f.write("【" + logType + "】\t" + logInfo + '\n' )
+        f.write("【" + logType + "】" + logInfo + '\n' )
         f.close
 
 
@@ -88,11 +88,11 @@ def GetHeaders(tag):
     }
 
 
-def GetPayload(tag, start, lastTime):
+def GetPayload(tag, start, requestTime):
     '''
     :param tag:tag名
     :param start:搜索开始位置
-    :param lastTime:最后一个的时间
+    :param requestTime:最后一个的时间
     :return:请求需要的payload
     '''
     return (
@@ -102,15 +102,15 @@ def GetPayload(tag, start, lastTime):
         "c0-scriptName=TagBean\n"
         "c0-methodName=search\n"
         "c0-id=0\n"
-        "c0-param0=string:%s" % parse.quote(tag) + '\n'     # 请求的标签
+        "c0-param0=string:" + parse.quote(tag) + '\n'     # 请求的标签
         "c0-param1=number:0\n"
         "c0-param2=string:\n"
         "c0-param3=string:new\n"
         "c0-param4=boolean:false\n"
         "c0-param5=number:0\n"
-        "c0-param6=number:%s" % str(requestsNum) + '\n'     # 每次请求的个数
-        "c0-param7=number:%s" % str(start) + '\n'           # 当前请求的位置
-        "c0-param8=number:%s" % lastTime + '\n'             # 开始搜索的时间
+        "c0-param6=number:" + str(requestNum) + '\n'     # 每次请求的个数
+        "c0-param7=number:" + str(start) + '\n'           # 当前请求的位置
+        "c0-param8=number:" + requestTime + '\n'             # 开始搜索的时间
         "batchId=123456"
     )
 
@@ -133,8 +133,8 @@ def DownloadFile(fullFileName, url):
                 # 下载完成退出函数
                 return
         except requests.exceptions.ConnectionError as e:
-            LogEvent("下载失败", "目标文件：" + fullFileName + "\nUrl：" + url + '\n')
-    LogEvent("下载失败", "目标文件：" + fullFileName + "\nUrl：" + url + '\n')
+            LogEvent("下载失败", "目标文件:" + fullFileName + " Url:" + url)
+    LogEvent("下载失败", "目标文件:" + fullFileName + " Url:" + url)
     
     
 def ProcessHtmlLinks(html, fileName):
@@ -149,14 +149,15 @@ def ProcessHtmlLinks(html, fileName):
     text = "\n\n=====================\n"
     for link in links:
         linkText = link.get_text()
+        # a标签内可能无链接
         if "href" not in link:
             continue
         linkUrl = link["href"]
         if isDownloadLinkImg:
             # 如果链接指向图片，直接下载
-            imgType = imgPattern.findall(linkUrl)
-            if imgType != []:
-                DownloadFile(fileName + ValidateFileName(linkText) + imgType[0], linkUrl)
+            imgExtencion = imgPattern.findall(linkUrl)
+            if imgExtencion != []:
+                DownloadFile(fileName + ValidateFileName(linkText) + imgExtencion[0], linkUrl)
                 continue
         text += linkText + '\n'
         text += linkUrl + '\n'
@@ -317,14 +318,14 @@ headers = GetHeaders(tag)
 
 
 while True:
-    payload = GetPayload(tag, i, lastTime)
+    payload = GetPayload(tag, requestPosition, requestTime)
     response = requests.post(url=url, data=payload, headers=headers)
     response.encoding = "unicode_escape"
-    print("开始下载\t" + str(i) + '\t' + lastTime)
-    LogEvent("开始下载", "i="+str(i)+ ", lastTime=" +lastTime)
-    i += requestsNum
-    lastTime = ProcessResponseText(response.text)
-    if(lastTime == None):
+    print("开始下载\t" + str(requestPosition) + '\t' + requestTime)
+    LogEvent("开始下载", "requestPosition= "+str(requestPosition)+ ", requestTime= " +requestTime)
+    requestPosition += requestNum
+    requestTime = ProcessResponseText(response.text)
+    if(requestTime == None):
         print("下载结束")
         LogEvent("下载结束", "")
         break
