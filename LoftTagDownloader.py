@@ -291,13 +291,10 @@ def ProcessResponseText(text):
             fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         textFile = fileName + ".txt"
 
-        # 如果文件存在，跳过，减少下载量
-        if os.path.isfile(textFile):
-            continue
         contentText = BeautifulSoup(content, "html.parser").get_text()
         contentLinks = ProcessHtmlLinks(content, fileName)
-        #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章
-        if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []):
+        #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
+        if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
             with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
                 f.write("标题：" + title + '\n')
                 f.write("昵称：" + blogNickName + '\n')
