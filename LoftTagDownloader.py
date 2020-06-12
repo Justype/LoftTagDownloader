@@ -285,7 +285,7 @@ def ProcessResponseText(text):
         contentLinks = ProcessHtmlLinks(content, fileName)
         #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章
         if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []):
-            with open(textFile, "a+", encoding="utf-8", errors="ignore") as f:
+            with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
                 f.write("标题：" + title + '\n')
                 f.write("昵称：" + blogNickName + '\n')
                 f.write("发布时间：" + readablePublishTime + '\n')
