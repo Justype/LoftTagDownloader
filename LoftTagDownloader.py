@@ -68,7 +68,7 @@ def ValidateFileName(fileName):
     :param fileName:文件名
     :return:去除非法字符的文件名
     '''
-    rstr = r"[\/\\\:\*\?\"\<\>\|\t\n\r]"  # '/ \ : * ? " < > | \t \n \r
+    rstr = r"[\/\\\:\*\?\"\<\>\|\t\n\r\.]"  # '/ \ : * ? " < > | \t \n \r .
     return re.sub(rstr, "", fileName)
 
 
