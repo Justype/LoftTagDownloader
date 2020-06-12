@@ -6,18 +6,18 @@ from bs4 import BeautifulSoup
 from urllib import parse
 from requests import ReadTimeout, ConnectionError
 
-#region 可设置
+# region 可设置
 tag = ""  # 标签名，如果不填，在命令行内输入
 
 hotMin = 0          # 最低热度
 blogMinDate = ""    # 最小时间 YYYY-mm-dd
-ignoreTags = [ ]    # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
+ignoreTags = []    # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
 
 
 isDownloadBlogImg = True    # 是否下载  博客图片
 isDownloadLinkImg = True    # 是否下载  外链图片
-isDownloadBlogContent = True    #是否下载  文章
-isDownloadBlogWhileItHasImg = False   #如果博客有图片，是否下载文章
+isDownloadBlogContent = True  # 是否下载  文章
+isDownloadBlogWhileItHasImg = False  # 如果博客有图片，是否下载文章
 blogMinLength = 0       # 文章最小长度
 isSortByAuthor = False  # 是否按作者分类
 
@@ -32,9 +32,9 @@ requestTime = '0'       # 记录时间      默认 '0'
 requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连
 
-#endregion
+# endregion
 
-#region 不会就别改，折叠起来
+# region 不会就别改，折叠起来
 
 while tag == "":
     tag = input("tag：")
@@ -45,20 +45,28 @@ ignoreTagsSet = {tag.lower() for tag in ignoreTags}
 if blogMinDate == "":
     blogMinTime = 0.0
 else:
-    blogMinTime = time.mktime(time.strptime(blogMinDate +" 00:00:00", "%Y-%m-%d %H:%M:%S"))*1000
+    blogMinTime = time.mktime(time.strptime(blogMinDate + " 00:00:00", "%Y-%m-%d %H:%M:%S"))*1000
 # region Methods
+
 
 def ProcessBadFileName(fileName):
     return repr(fileName)[1:-1]
 
-def LogEvent(logType, logInfo):
+
+def LogEvent(logType, logInfo="", isPrintDetail=True):
     '''
     记录日志，保存到 ./tag/log.txt 下
     :param logType:日志类型
     :param logInfo:日志内容
+    :param isPrintDetail:是否打印详细信息
     '''
+    text = "【" + logType + "】" + logInfo
+    if isPrintDetail:
+        print(text)
+    else:
+        print("【" + logType + "】")
     with open(logFile, 'a+', encoding='utf-8') as f:
-        f.write("【" + logType + "】" + logInfo + '\n' )
+        f.write(text + '\n')
         f.close
 
 
@@ -68,8 +76,8 @@ def ValidateFileName(fileName):
     :param fileName:文件名
     :return:去除非法字符的文件名
     '''
-    rstr = r"[\/\\\:\*\?\"\<\>\|\t\n\r\.]"  # '/ \ : * ? " < > | \t \n \r .
-    return re.sub(rstr, "", fileName)
+    rstr = r"[\/\\\:\*\?\"\<\>\|\t\n\r\0]+|[ \.]+$|^[\.]+" # '/ \ : * ? " < > | \t \n \r \0 结尾的空格和. 开头的.
+    return re.sub(rstr, "_", fileName)
 
 
 def GetHeaders(tag):
@@ -137,15 +145,16 @@ def DownloadFile(fullFileName, url):
                     f.close()
                 # 下载完成退出函数
                 return
-        except (ConnectionError, ReadTimeout) as e:
+        except (ConnectionError, ReadTimeout, TimeoutError) as e:
             # 写文本的时候可能会出现异常，可能是文件名的问题，如果出现，请提交issue
             try:
-                LogEvent("下载失败"+ str(i), "目标文件:" + fullFileName + "\nUrl:" + url)
+                LogEvent("下载失败" + str(i), "目标文件:" + fullFileName + "\nUrl:" + url, False)
             except UnicodeEncodeError:
-                logEvent("下载失败"+ str(i), "目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url)
+                logEvent("下载失败" + str(i), "目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
                 # 实在不行，使用下面的一行，只log Url
                 # logEvent("下载失败"+ str(i), "Url:" + url)
-    
+
+
 def ProcessHtmlLinks(html, fileName):
     '''
     下载图像链接，返回所有非图片链接
@@ -208,7 +217,7 @@ def ProcessResponseText(text):
         publishTimePattern = re.compile(blog + r'\.publishTime=([0-9]+);')
         publishTime = publishTimePattern.findall(text)[0]
         # 小于规定时间，结束
-        if int(publishTime)<blogMinTime:
+        if int(publishTime) < blogMinTime:
             return None
         # 转换为可读文本
         readablePublishTime = time.strftime(
@@ -246,7 +255,6 @@ def ProcessResponseText(text):
             title = title[0]
         else:
             title = ""
-        # print("title：" + title)
 
         # 获取 内容
         contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
@@ -267,17 +275,22 @@ def ProcessResponseText(text):
 
         # endregion
 
+        #region 名称合法化
+        legalNickName = ValidateFileName(blogNickName)
+        legalTitle = ValidateFileName(title)
+        legalTime = ValidateFileName(readablePublishTime)
+        #endregion
+
         # region 保存数据
         if isSortByAuthor:
             # 作者目录
-            authorPath = os.path.join(tagPath, ValidateFileName(blogNickName))
+            authorPath = os.path.join(tagPath, legalNickName)
             ChechPath(authorPath)
-            fileName = os.path.join(authorPath, ValidateFileName(
-                blogNickName + "_" + title + '_' + readablePublishTime))
+            fileName = os.path.join(authorPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         else:
-            fileName = os.path.join(tagPath, ValidateFileName(
-                blogNickName + "_" + title + '_' + readablePublishTime))
+            fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         textFile = fileName + ".txt"
+
         # 如果文件存在，跳过，减少下载量
         if os.path.isfile(textFile):
             continue
@@ -325,18 +338,24 @@ logFile = os.path.join(tagPath, "log.txt")
 url = "http://www.lofter.com/dwr/call/plaincall/TagBean.search.dwr"
 headers = GetHeaders(tag)
 
+try:
+    while True:
+        payload = GetPayload(tag, requestPosition, requestTime)
+        response = requests.post(url=url, data=payload, headers=headers)
+        response.encoding = "unicode_escape"
+        LogEvent("开始下载", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+        requestPosition += requestNum
+        requestTime = ProcessResponseText(response.text)
+        if(requestTime == None):
+            LogEvent("下载结束")
+            break
+except ConnectionError:
+    LogEvent("连接失败", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+except TimeoutError:
+    LogEvent("连结超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+except ReadTimeout:
+    LogEvent("读取超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+finally:
+    print("详细内容请查看日志")
 
-while True:
-    payload = GetPayload(tag, requestPosition, requestTime)
-    response = requests.post(url=url, data=payload, headers=headers)
-    response.encoding = "unicode_escape"
-    print("开始下载\t" + str(requestPosition) + '\t' + requestTime)
-    LogEvent("开始下载", "requestPosition= "+str(requestPosition)+ ", requestTime= " +requestTime)
-    requestPosition += requestNum
-    requestTime = ProcessResponseText(response.text)
-    if(requestTime == None):
-        print("下载结束")
-        LogEvent("下载结束", "")
-        break
-
-#endregion
+# endregion
