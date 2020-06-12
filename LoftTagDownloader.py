@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from urllib import parse
 
 #region 可设置
-tag = ""  # 标签名
+tag = ""  # 标签名，如果不填，在命令行内输入
 
 hotMin = 0          # 最低热度
 blogMinDate = ""    # 最小时间 YYYY-mm-dd
@@ -25,22 +25,18 @@ isSortByAuthor = False  # 是否按作者分类
 mainPath = os.path.join(os.path.expanduser('~'), "Desktop", "Lofter")
 # mainPath = "D:\\Lofter"
 
-
-
 # 如果断了可以看 日志，然后修改下面两个继续
 i = 0               # 循环变量      默认 0      每次递增 请求数
 lastTime = '0'      # 记录时间      默认 '0'
 requestsNum = 100   # 每次请求博客的个数
-# 如果下图片，可以设置的小一点
-# 如果规定了最小时间，建议设置小一点的请求数
+# 如果请求过于频繁，会被断连
 
 #endregion
 
 #region 不会就别改，折叠起来
 
-if(tag == ""):
-    print("tag为空")
-    exit()
+while tag == "":
+    tag = input("tag：")
 
 imgPattern = re.compile(r'(\.jpg|\.png|\.gif|\.jpeg)')
 ignoreTagsSet = {tag.lower() for tag in ignoreTags}
