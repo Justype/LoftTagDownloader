@@ -121,6 +121,8 @@ def DownloadFile(fullFileName, url):
     :param fullFileName:文件名+后缀
     :url:文件url
     '''
+    if os.path.exists(fullFileName):
+        return
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.146 Safari/537.36'}
     for i in range(2):
