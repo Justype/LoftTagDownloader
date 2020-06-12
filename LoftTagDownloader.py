@@ -4,6 +4,7 @@ import requests
 import time
 from bs4 import BeautifulSoup
 from urllib import parse
+from requests import ReadTimeout, ConnectionError
 
 #region 可设置
 tag = ""  # 标签名，如果不填，在命令行内输入
@@ -47,6 +48,8 @@ else:
     blogMinTime = time.mktime(time.strptime(blogMinDate +" 00:00:00", "%Y-%m-%d %H:%M:%S"))*1000
 # region Methods
 
+def ProcessBadFileName(fileName):
+    return repr(fileName)[1:-1]
 
 def LogEvent(logType, logInfo):
     '''
@@ -134,9 +137,14 @@ def DownloadFile(fullFileName, url):
                     f.close()
                 # 下载完成退出函数
                 return
-        except Exception as e:
-            LogEvent("下载失败"+ str(i), "目标文件:" + fullFileName + "\nUrl:" + url + "\n错误信息" + e)
-    
+        except (ConnectionError, ReadTimeout) as e:
+            # 写文本的时候可能会出现异常，可能是文件名的问题，如果出现，请提交issue
+            try:
+                LogEvent("下载失败"+ str(i), "目标文件:" + fullFileName + "\nUrl:" + url + "\n错误信息" + e)
+            except UnicodeEncodeError:
+                logEvent("下载失败"+ str(i), "目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url + "\n错误信息" + e)
+                # 实在不行，使用下面的一行，只log Url
+                # logEvent("下载失败"+ str(i), "Url:" + url + "\n错误信息" + e)
     
 def ProcessHtmlLinks(html, fileName):
     '''
