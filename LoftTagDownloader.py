@@ -13,10 +13,10 @@ blogMinDate = ""    # 最小时间 YYYY-mm-dd
 ignoreTags = [ ]    # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
 
 
-isDownloadBlogImg = True    # 是否下载  博客图片
-isDownloadLinkImg = True    # 是否下载  外链图片
+isDownloadBlogImg = False    # 是否下载  博客图片
+isDownloadLinkImg = False    # 是否下载  外链图片
 isDownloadBlogContent = True    #是否下载  文章
-isDownloadBlogWhileItHasImg = True   #如果博客有图片，是否下载文章
+isDownloadBlogWhileItHasImg = False   #如果博客有图片，是否下载文章
 blogMinLength = 0       # 文章最小长度
 isSortByAuthor = False  # 是否按作者分类
 
@@ -149,6 +149,8 @@ def ProcessHtmlLinks(html, fileName):
     text = "\n\n=====================\n"
     for link in links:
         linkText = link.get_text()
+        if "href" not in link:
+            continue
         linkUrl = link["href"]
         if isDownloadLinkImg:
             # 如果链接指向图片，直接下载
