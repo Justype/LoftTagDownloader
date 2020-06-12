@@ -132,9 +132,8 @@ def DownloadFile(fullFileName, url):
                     f.close()
                 # 下载完成退出函数
                 return
-        except requests.exceptions.ConnectionError as e:
-            LogEvent("下载失败", "目标文件:" + fullFileName + " Url:" + url)
-    LogEvent("下载失败", "目标文件:" + fullFileName + " Url:" + url)
+        except Exception as e:
+            LogEvent("下载失败"+ str(i), "目标文件:" + fullFileName + "\nUrl:" + url + "\n错误信息" + e)
     
     
 def ProcessHtmlLinks(html, fileName):
