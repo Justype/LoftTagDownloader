@@ -55,6 +55,18 @@ def ProcessBadFileName(fileName):
     return repr(fileName)[1:-1]
 
 
+def PrintSave(info):
+    '''
+    打印信息，try UnicodeEncodeError
+    :param info:信息
+    '''
+    if isPrintEverySave:
+        try:
+            print(info)
+        except UnicodeEncodeError:
+            print("该条信息含有非法的Unicode字符")
+
+
 def LogEvent(logType, logInfo="", isPrintDetail=True):
     '''
     记录日志，保存到 ./tag/log.txt 下
@@ -180,8 +192,7 @@ def ProcessHtmlLinks(html, fileName, info):
             # 如果链接指向图片，直接下载
             imgExtencion = imgPattern.findall(linkUrl)
             if imgExtencion != []:
-                if isPrintEverySave:
-                    print(info + "的外链图片")
+                PrintSave(info + "的外链图片")
                 DownloadFile(fileName + ValidateFileName(linkText) + imgExtencion[0], linkUrl)
                 continue
         text += linkText + '\n'
@@ -304,8 +315,7 @@ def ProcessResponseText(text):
             contentLinks = ProcessHtmlLinks(content, fileName, info)
             #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
             if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
-                if isPrintEverySave:
-                    print(info + "的文章")
+                PrintSave(info + "的文章")
                 with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
                     f.write("标题：" + title + '\n')
                     f.write("昵称：" + blogNickName + '\n')
@@ -317,8 +327,7 @@ def ProcessResponseText(text):
                     f.writelines(imgLinks)
                     f.close()
             if isDownloadBlogImg:
-                if isPrintEverySave:
-                    print(info + "的图片")
+                PrintSave(info + "的图片")
                 DownloadImgs(fileName, imgLinks)
             # endregion
         except IndexError:
