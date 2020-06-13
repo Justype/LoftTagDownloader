@@ -264,74 +264,81 @@ def ProcessResponseText(text):
             # 再根据博客id，获取用户名
             blogNickNamePattern = re.compile(blogId + r'.*?blogNickName="(.*?)"')
             blogNickName = blogNickNamePattern.findall(text)[0]
+
+            blogPageUrlPattern = re.compile(blog + r'\.blogPageUrl="(.*?)"')
+            blogPageUrl = blogPageUrlPattern.findall(text)[0]
             # endregion
+        except IndexError:
+            continue
+            
+        # region 可能为空的数据
+        # 获取 标题
+        titlePattern = re.compile(blog + r'\.title="(.*?)";')
+        title = titlePattern.findall(text)
+        if(title):
+            title = title[0]
+        else:
+            title = ""
 
-            # region 可能为空的数据
-            # 获取 标题
-            titlePattern = re.compile(blog + r'\.title="(.*?)";')
-            title = titlePattern.findall(text)
-            if(title):
-                title = title[0]
-            else:
-                title = ""
+        # 获取 内容
+        contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
+        content = contentPattern.findall(text)
+        if(content):
+            content = content[0]
+        else:
+            content = ""
 
-            # 获取 内容
-            contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
-            content = contentPattern.findall(text)
-            if(content):
-                content = content[0]
-            else:
-                content = ""
+        # 获取文章的图片链接
+        imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
+        imgList = imgListPattern.findall(text)
+        if(imgList):
+            imgLinksPattern = re.compile(r'"orign":"(.*?)"')
+            imgLinks = imgLinksPattern.findall(imgList[0])
+        else:
+            imgLinks = []
+        # endregion
 
-            # 获取文章的图片链接
-            imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
-            imgList = imgListPattern.findall(text)
-            if(imgList):
-                imgLinksPattern = re.compile(r'"orign":"(.*?)"')
-                imgLinks = imgLinksPattern.findall(imgList[0])
-            else:
-                imgLinks = []
+        #region 名称合法化
+        legalNickName = ValidateFileName(blogNickName)
+        legalTitle = ValidateFileName(title)
+        legalTime = ValidateFileName(readablePublishTime)
+        info = "正在保存：作者=" + legalNickName + "\t时间=" + readablePublishTime
+        #endregion
 
-            # endregion
+        # region 保存数据
+        if isSortByAuthor:
+            # 作者目录
+            authorPath = os.path.join(tagPath, legalNickName)
+            ChechPath(authorPath)
+            fileName = os.path.join(authorPath, legalNickName + "_" + legalTitle + '_' + legalTime)
+        else:
+            fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
+        textFile = fileName + ".txt"
 
-            #region 名称合法化
-            legalNickName = ValidateFileName(blogNickName)
-            legalTitle = ValidateFileName(title)
-            legalTime = ValidateFileName(readablePublishTime)
-            info = "正在保存：作者=" + legalNickName + "\t时间=" + readablePublishTime
-            #endregion
-
-            # region 保存数据
-            if isSortByAuthor:
-                # 作者目录
-                authorPath = os.path.join(tagPath, legalNickName)
-                ChechPath(authorPath)
-                fileName = os.path.join(authorPath, legalNickName + "_" + legalTitle + '_' + legalTime)
-            else:
-                fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
-            textFile = fileName + ".txt"
-
-            contentText = BeautifulSoup(content, "html.parser").get_text()
-            contentLinks = ProcessHtmlLinks(content, fileName, info)
-            #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
-            if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
-                PrintSave(info + "的文章")
+        contentText = BeautifulSoup(content, "html.parser").get_text()
+        contentLinks = ProcessHtmlLinks(content, fileName, info)
+        #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
+        if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
+            PrintSave(info + "的文章")
+            try:
                 with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
                     f.write("标题：" + title + '\n')
                     f.write("昵称：" + blogNickName + '\n')
                     f.write("发布时间：" + readablePublishTime + '\n')
                     f.write("热度：" + hot + '\n')
                     f.write("tag：" + tags + '\n')
+                    f.write("Url：" + blogPageUrl + '\n')
                     f.write("内容：\n" + contentText + contentLinks + '\n\n\n')
                     f.write("文章图像链接：\n")
                     f.writelines(imgLinks)
                     f.close()
-            if isDownloadBlogImg:
-                PrintSave(info + "的图片")
-                DownloadImgs(fileName, imgLinks)
-            # endregion
-        except IndexError:
-            continue
+            except OSError:
+                LogEvent("文件名出错", "Url：" + blogPageUrl, False)
+        if isDownloadBlogImg:
+            PrintSave(info + "的图片")
+            DownloadImgs(fileName, imgLinks)
+        # endregion
+        
     # 返回最后博客的发布时间
     return publishTime
 
