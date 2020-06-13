@@ -151,11 +151,11 @@ def DownloadFile(fullFileName, url):
             # 写文本的时候可能会出现异常，可能是文件名的问题，如果出现，请提交issue
             try:
                 if i == 2:
-                    LogEvent("下载外链图片失败", "\n目标文件:" + fullFileName + "\nUrl:" + url, False)
+                    LogEvent("文件下载失败", "\n目标文件:" + fullFileName + "\nUrl:" + url, False)
             except UnicodeEncodeError:
-                logEvent("下载外链图片失败", "\n目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
+                logEvent("文件下载失败", "\n目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
                 # 实在不行，使用下面的一行，只log Url
-                # logEvent("下载外链图片失败"+ str(i), "Url:" + url)
+                # logEvent("文件下载失败"+ str(i), "Url:" + url)
 
 
 def ProcessHtmlLinks(html, fileName, info):
@@ -354,7 +354,7 @@ try:
         payload = GetPayload(tag, requestPosition, requestTime)
         response = requests.post(url=url, data=payload, headers=headers)
         response.encoding = "unicode_escape"
-        LogEvent("开始下载", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+        LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
         requestPosition += requestNum
         requestTime = ProcessResponseText(response.text)
         if(requestTime == None):

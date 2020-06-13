@@ -40,7 +40,7 @@ isSortByAuthor = False  # 是否按作者分类
 ① 找到日志`log.txt`，复制最后一次的`requestPosition`，`requestTime`
 
 ```
-【开始下载】requestPosition= 0, requestTime= 0
+【开始请求】requestPosition= 0, requestTime= 0
 【连接超时】requestPosition= 100, requestTime= 1513515723233
 ```
 
