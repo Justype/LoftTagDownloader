@@ -180,7 +180,7 @@ def ProcessHtmlLinks(html, fileName, info):
     :return:所有链接
     '''
     links = BeautifulSoup(html, "html.parser").find_all("a")
-    text = "\n\n=====================\n"
+    text = "\n=====================\n"
     for link in links:
         linkText = link.get_text()
         # a标签内可能无链接
@@ -328,12 +328,13 @@ def ProcessResponseText(text):
                     f.write("热度：" + hot + '\n')
                     f.write("tag：" + tags + '\n')
                     f.write("Url：" + blogPageUrl + '\n')
-                    f.write("内容：\n" + contentText + contentLinks + '\n\n\n')
+                    f.write("内容：\n" + contentText + contentLinks + '\n')
                     f.write("文章图像链接：\n")
                     f.writelines(imgLinks)
                     f.close()
             except OSError:
                 LogEvent("文件名出错", "Url：" + blogPageUrl, False)
+                continue
         if isDownloadBlogImg:
             PrintSave(info + "的图片")
             DownloadImgs(fileName, imgLinks)
