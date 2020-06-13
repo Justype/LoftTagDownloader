@@ -212,103 +212,105 @@ def ProcessResponseText(text):
     if blogs == []:
         return None
     for blog in blogs:
-        # region 不可能为空的数据
-        # 获取 发布时间
-        publishTimePattern = re.compile(blog + r'\.publishTime=([0-9]+);')
-        publishTime = publishTimePattern.findall(text)[0]
-        # 小于规定时间，结束
-        if int(publishTime) < blogMinTime:
-            return None
-        # 转换为可读文本
-        readablePublishTime = time.strftime(
-            "%Y-%m-%d %H:%M:%S", time.localtime(float(publishTime)/1000))
+        try:
+            # region 不可能为空的数据
+            # 获取 发布时间
+            publishTimePattern = re.compile(blog + r'\.publishTime=([0-9]+);')
+            publishTime = publishTimePattern.findall(text)[0]
+            # 小于规定时间，结束
+            if int(publishTime) < blogMinTime:
+                return None
+            # 转换为可读文本
+            readablePublishTime = time.strftime(
+                "%Y-%m-%d %H:%M:%S", time.localtime(float(publishTime)/1000))
 
-        # 获取 tag
-        tagsPattern = re.compile(blog + r'\.tag="(.*?)";')
-        tags = tagsPattern.findall(text)[0]
-        if len(ignoreTagsSet) > 0:
-            tagsList = tags.lower().split(',')
-            # 如果 tag有交集， 跳过
-            if len(ignoreTagsSet.intersection(tagsList)) > 0:
+            # 获取 tag
+            tagsPattern = re.compile(blog + r'\.tag="(.*?)";')
+            tags = tagsPattern.findall(text)[0]
+            if len(ignoreTagsSet) > 0:
+                tagsList = tags.lower().split(',')
+                # 如果 tag有交集， 跳过
+                if len(ignoreTagsSet.intersection(tagsList)) > 0:
+                    continue
+
+            # 获取热度
+            hotPattern = re.compile(blog + r'\.hot=([0-9]+);')
+            hot = hotPattern.findall(text)[0]
+            if int(hot) < hotMin:
+                # 热度小于设定值，跳过
                 continue
 
-        # 获取热度
-        hotPattern = re.compile(blog + r'\.hot=([0-9]+);')
-        hot = hotPattern.findall(text)[0]
-        if int(hot) < hotMin:
-            # 热度小于设定值，跳过
+            # 先获取博客id
+            blogIdPattern = re.compile(blog + r'\.blogId=([0-9]+);')
+            blogId = blogIdPattern.findall(text)[0]
+            # 再根据博客id，获取用户名
+            blogNickNamePattern = re.compile(blogId + r'.*?blogNickName="(.*?)"')
+            blogNickName = blogNickNamePattern.findall(text)[0]
+            # endregion
+
+            # region 可能为空的数据
+            # 获取 标题
+            titlePattern = re.compile(blog + r'\.title="(.*?)";')
+            title = titlePattern.findall(text)
+            if(title):
+                title = title[0]
+            else:
+                title = ""
+
+            # 获取 内容
+            contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
+            content = contentPattern.findall(text)
+            if(content):
+                content = content[0]
+            else:
+                content = ""
+
+            # 获取文章的图片链接
+            imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
+            imgList = imgListPattern.findall(text)
+            if(imgList):
+                imgLinksPattern = re.compile(r'"orign":"(.*?)"')
+                imgLinks = imgLinksPattern.findall(imgList[0])
+            else:
+                imgLinks = []
+
+            # endregion
+
+            #region 名称合法化
+            legalNickName = ValidateFileName(blogNickName)
+            legalTitle = ValidateFileName(title)
+            legalTime = ValidateFileName(readablePublishTime)
+            #endregion
+
+            # region 保存数据
+            if isSortByAuthor:
+                # 作者目录
+                authorPath = os.path.join(tagPath, legalNickName)
+                ChechPath(authorPath)
+                fileName = os.path.join(authorPath, legalNickName + "_" + legalTitle + '_' + legalTime)
+            else:
+                fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
+            textFile = fileName + ".txt"
+
+            contentText = BeautifulSoup(content, "html.parser").get_text()
+            contentLinks = ProcessHtmlLinks(content, fileName)
+            #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
+            if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
+                with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
+                    f.write("标题：" + title + '\n')
+                    f.write("昵称：" + blogNickName + '\n')
+                    f.write("发布时间：" + readablePublishTime + '\n')
+                    f.write("热度：" + hot + '\n')
+                    f.write("tag：" + tags + '\n')
+                    f.write("内容：\n" + contentText + contentLinks + '\n\n\n')
+                    f.write("文章图像链接：\n")
+                    f.writelines(imgLinks)
+                    f.close()
+            if isDownloadBlogImg:
+                DownloadImgs(fileName, imgLinks)
+            # endregion
+        except IndexError:
             continue
-
-        # 先获取博客id
-        blogIdPattern = re.compile(blog + r'\.blogId=([0-9]+);')
-        blogId = blogIdPattern.findall(text)[0]
-        # 再根据博客id，获取用户名
-        blogNickNamePattern = re.compile(blogId + r'.*?blogNickName="(.*?)"')
-        blogNickName = blogNickNamePattern.findall(text)[0]
-        # endregion
-
-        # region 可能为空的数据
-        # 获取 标题
-        titlePattern = re.compile(blog + r'\.title="(.*?)";')
-        title = titlePattern.findall(text)
-        if(title):
-            title = title[0]
-        else:
-            title = ""
-
-        # 获取 内容
-        contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
-        content = contentPattern.findall(text)
-        if(content):
-            content = content[0]
-        else:
-            content = ""
-
-        # 获取文章的图片链接
-        imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
-        imgList = imgListPattern.findall(text)
-        if(imgList):
-            imgLinksPattern = re.compile(r'"orign":"(.*?)"')
-            imgLinks = imgLinksPattern.findall(imgList[0])
-        else:
-            imgLinks = []
-
-        # endregion
-
-        #region 名称合法化
-        legalNickName = ValidateFileName(blogNickName)
-        legalTitle = ValidateFileName(title)
-        legalTime = ValidateFileName(readablePublishTime)
-        #endregion
-
-        # region 保存数据
-        if isSortByAuthor:
-            # 作者目录
-            authorPath = os.path.join(tagPath, legalNickName)
-            ChechPath(authorPath)
-            fileName = os.path.join(authorPath, legalNickName + "_" + legalTitle + '_' + legalTime)
-        else:
-            fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
-        textFile = fileName + ".txt"
-
-        contentText = BeautifulSoup(content, "html.parser").get_text()
-        contentLinks = ProcessHtmlLinks(content, fileName)
-        #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
-        if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
-            with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
-                f.write("标题：" + title + '\n')
-                f.write("昵称：" + blogNickName + '\n')
-                f.write("发布时间：" + readablePublishTime + '\n')
-                f.write("热度：" + hot + '\n')
-                f.write("tag：" + tags + '\n')
-                f.write("内容：\n" + contentText + contentLinks + '\n\n\n')
-                f.write("文章图像链接：\n")
-                f.writelines(imgLinks)
-                f.close()
-        if isDownloadBlogImg:
-            DownloadImgs(fileName, imgLinks)
-        # endregion
-
     # 返回最后博客的发布时间
     return publishTime
 
