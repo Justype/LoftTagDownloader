@@ -37,7 +37,7 @@ isSortByAuthor = False  # 是否按作者分类
 
 ## 如果中途被断了
 
-① 找到日志`log.txt`，将最后一次的`requestPosition`，`requestTime`
+① 找到日志`log.txt`，复制最后一次的`requestPosition`，`requestTime`
 
 ```
 【开始下载】requestPosition= 0, requestTime= 0
@@ -46,7 +46,7 @@ isSortByAuthor = False  # 是否按作者分类
 
 或者直接复制命令行内的两个值
 
-② 然后复制到 `LoftTagDownloader.py` 内，如下：
+② 然后粘贴到 `LoftTagDownloader.py` 内，如下：
 
 ```python
 # 如果断了可以看 日志，然后修改下面两个继续
@@ -56,6 +56,21 @@ requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连
 ```
 
-## 还有其他问题
+③ 再次运行相同的tag
 
-请提交issue
+## 其他问题
+
+1. 程序运行半天，命令行为什么只有`requestPosition= 0, requestTime= 0` ？
+    - 现在最新版本已添加`isPrintEverySave = True`，即打印所有保存信息；
+    - 如果不想要详细信息请设置为`False`。
+2. 提示`【下载外链图片失败】`怎么办？
+    - 找到`log.txt`下对应的Url，自行下载对应的图片；
+    - 或者重新开始（有可能该外链图片已经被删了）。
+3. 重新开始跑同一个Tag，会不会再次下载已经下过的？
+    - 不会。识别到文件存在，会自己跳过。
+4. 为啥文章中的外链显示不全？
+    - 如果下载了外链图片，该外链不会添加到文章中。
+
+如果还有其他问题，请提交issue
+
+## 大家觉得喜欢，请Star本项目

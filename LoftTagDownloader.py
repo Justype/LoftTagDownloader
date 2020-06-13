@@ -31,6 +31,8 @@ requestPosition = 0     # 请求位置      默认 0      每次递增 请求数
 requestTime = '0'       # 请求博客的时间      默认 '0'
 requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连
+isPrintEverySave = True    # 是否打印每次的保存信息
+
 
 # endregion
 
@@ -64,7 +66,7 @@ def LogEvent(logType, logInfo="", isPrintDetail=True):
     if isPrintDetail:
         print(text)
     else:
-        print("【" + logType + "】")
+        print("【" + logType + "】  详细信息请看日志")
     with open(logFile, 'a+', encoding='utf-8') as f:
         f.write(text + '\n')
         f.close
@@ -136,7 +138,7 @@ def DownloadFile(fullFileName, url):
         return
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.146 Safari/537.36'}
-    for i in range(2):
+    for i in range(3):
         try:
             fileResponse = requests.get(url, headers=headers, timeout=20)
             if fileResponse.status_code == 200:
@@ -148,19 +150,21 @@ def DownloadFile(fullFileName, url):
         except (ConnectionError, ReadTimeout, TimeoutError) as e:
             # 写文本的时候可能会出现异常，可能是文件名的问题，如果出现，请提交issue
             try:
-                LogEvent("下载失败" + str(i), "目标文件:" + fullFileName + "\nUrl:" + url, False)
+                if i == 2:
+                    LogEvent("下载外链图片失败", "\n目标文件:" + fullFileName + "\nUrl:" + url, False)
             except UnicodeEncodeError:
-                logEvent("下载失败" + str(i), "目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
+                logEvent("下载外链图片失败", "\n目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
                 # 实在不行，使用下面的一行，只log Url
-                # logEvent("下载失败"+ str(i), "Url:" + url)
+                # logEvent("下载外链图片失败"+ str(i), "Url:" + url)
 
 
-def ProcessHtmlLinks(html, fileName):
+def ProcessHtmlLinks(html, fileName, info):
     '''
     下载图像链接，返回所有非图片链接
     如果不下载图片链接，返回所有链接
     :param html:HTML文本
     :param fileName:想要保存的文件名（不要后缀）
+    :param info:作者和时间信息
     :return:所有链接
     '''
     links = BeautifulSoup(html, "html.parser").find_all("a")
@@ -168,13 +172,16 @@ def ProcessHtmlLinks(html, fileName):
     for link in links:
         linkText = link.get_text()
         # a标签内可能无链接
-        if "href" not in link:
+        try:
+            linkUrl = link["href"]
+        except KeyError:
             continue
-        linkUrl = link["href"]
         if isDownloadLinkImg:
             # 如果链接指向图片，直接下载
             imgExtencion = imgPattern.findall(linkUrl)
             if imgExtencion != []:
+                if isPrintEverySave:
+                    print(info + "的外链图片")
                 DownloadFile(fileName + ValidateFileName(linkText) + imgExtencion[0], linkUrl)
                 continue
         text += linkText + '\n'
@@ -280,6 +287,7 @@ def ProcessResponseText(text):
             legalNickName = ValidateFileName(blogNickName)
             legalTitle = ValidateFileName(title)
             legalTime = ValidateFileName(readablePublishTime)
+            info = "正在保存：作者=" + legalNickName + "\t时间=" + readablePublishTime
             #endregion
 
             # region 保存数据
@@ -293,9 +301,11 @@ def ProcessResponseText(text):
             textFile = fileName + ".txt"
 
             contentText = BeautifulSoup(content, "html.parser").get_text()
-            contentLinks = ProcessHtmlLinks(content, fileName)
+            contentLinks = ProcessHtmlLinks(content, fileName, info)
             #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
             if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
+                if isPrintEverySave:
+                    print(info + "的文章")
                 with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
                     f.write("标题：" + title + '\n')
                     f.write("昵称：" + blogNickName + '\n')
@@ -307,6 +317,8 @@ def ProcessResponseText(text):
                     f.writelines(imgLinks)
                     f.close()
             if isDownloadBlogImg:
+                if isPrintEverySave:
+                    print(info + "的图片")
                 DownloadImgs(fileName, imgLinks)
             # endregion
         except IndexError:
