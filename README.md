@@ -37,22 +37,21 @@ isSortByAuthor = False  # 是否按作者分类
 
 ## 如果中途被断了
 
-找到日志`log.txt`，将最后一次的`requestPosition`，`requestTime`
+① 找到日志`log.txt`，将最后一次的`requestPosition`，`requestTime`
 
 ```
 【开始下载】requestPosition= 0, requestTime= 0
-【开始下载】requestPosition= 100, requestTime= 1513515723233
-【下载结束】
+【连接超时】requestPosition= 100, requestTime= 1513515723233
 ```
 
-或者直接复制命令行内的两个值，左边是`requestPosition`，右边是`requestTime`
+或者直接复制命令行内的两个值
 
-然后复制到 `LoftTagDownloader.py` 内
+② 然后复制到 `LoftTagDownloader.py` 内，如下：
 
 ```python
 # 如果断了可以看 日志，然后修改下面两个继续
-requestPosition = 0     # 请求位置      默认 0      每次递增 请求数
-requestTime = '0'       # 记录时间      默认 '0'
+requestPosition = 100     # 请求位置      默认 0      每次递增 请求数
+requestTime = '1513515723233'       # 请求博客的时间      默认 '0'
 requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连
 ```

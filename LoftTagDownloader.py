@@ -28,7 +28,7 @@ mainPath = os.path.join(os.path.expanduser('~'), "Desktop", "Lofter")
 
 # 如果断了可以看 日志，然后修改下面两个继续
 requestPosition = 0     # 请求位置      默认 0      每次递增 请求数
-requestTime = '0'       # 记录时间      默认 '0'
+requestTime = '0'       # 请求博客的时间      默认 '0'
 requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连
 
@@ -351,7 +351,7 @@ try:
 except ConnectionError:
     LogEvent("连接失败", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
 except TimeoutError:
-    LogEvent("连结超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+    LogEvent("连接超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
 except ReadTimeout:
     LogEvent("读取超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
 finally:
