@@ -315,12 +315,12 @@ def ProcessResponseText(text):
             fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         textFile = fileName + ".txt"
 
-        contentText = BeautifulSoup(content, "html.parser").get_text()
-        contentLinks = ProcessHtmlLinks(content, fileName, info)
-        #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
-        if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
-            PrintSave(info + "的文章")
-            try:
+        try:
+            contentText = BeautifulSoup(content, "html.parser").get_text()
+            contentLinks = ProcessHtmlLinks(content, fileName, info)
+            #  是否下载博客               长度大于要求                          博客有图片，是否下载           图片为空，下载文章       文件是否不存在
+            if isDownloadBlogContent and len(contentText) > blogMinLength and (isDownloadBlogWhileItHasImg or imgLinks == []) and not os.path.exists(textFile):
+                PrintSave(info + "的文章")
                 with open(textFile, "w", encoding="utf-8", errors="ignore") as f:
                     f.write("标题：" + title + '\n')
                     f.write("昵称：" + blogNickName + '\n')
@@ -332,12 +332,12 @@ def ProcessResponseText(text):
                     f.write("文章图像链接：\n")
                     f.writelines(imgLinks)
                     f.close()
-            except OSError:
-                LogEvent("文件名非法", "Url：" + blogPageUrl, False)
-                continue
-        if isDownloadBlogImg:
-            PrintSave(info + "的图片")
-            DownloadImgs(fileName, imgLinks)
+            if isDownloadBlogImg:
+                PrintSave(info + "的图片")
+                DownloadImgs(fileName, imgLinks)
+        except OSError:
+            LogEvent("文件名非法", "Url：" + blogPageUrl, False)
+            continue
         # endregion
         
     # 返回最后博客的发布时间
