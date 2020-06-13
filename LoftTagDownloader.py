@@ -165,9 +165,9 @@ def DownloadFile(fullFileName, url):
                 if i == 2:
                     LogEvent("文件下载失败", "\n目标文件:" + fullFileName + "\nUrl:" + url, False)
             except UnicodeEncodeError:
-                logEvent("文件下载失败", "\n目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
+                LogEvent("文件下载失败", "\n目标文件:" + ProcessBadFileName(fullFileName) + "\nUrl:" + url, False)
                 # 实在不行，使用下面的一行，只log Url
-                # logEvent("文件下载失败"+ str(i), "Url:" + url)
+                # LogEvent("文件下载失败"+ str(i), "Url:" + url)
 
 
 def ProcessHtmlLinks(html, fileName, info):
