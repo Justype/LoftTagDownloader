@@ -64,7 +64,7 @@ def PrintSave(info):
         try:
             print(info)
         except UnicodeEncodeError:
-            print("该条信息含有非法的Unicode字符，但是正在下载图片，需要时间，请稍候")
+            print("该作者名称含有非法的Unicode字符，但是正在下载图片，需要时间，请稍候")
 
 
 def LogEvent(logType, logInfo="", isPrintDetail=True):
