@@ -37,6 +37,8 @@ isSortByAuthor = False  # 是否按作者分类
 
 ## 如果中途被断了
 
+现在已经支持自动继续了，如果下到一半不想下载，请按`ctrl + c`中断应用。中断后想继续下载，请按如下操作：
+
 ① 找到日志`log.txt`，复制最后一次的`requestPosition`，`requestTime`
 
 ```

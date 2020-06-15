@@ -33,6 +33,8 @@ requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连；如果每次请求过多，正则处理的慢。
 isPrintEverySave = True    # 是否打印每次的保存信息
 
+isReRequest = True      # DWR请求失败后 是否重新请求
+reRequestInterval = 5   # DWR请求失败后 重新请求的秒数
 
 # endregion
 
@@ -366,24 +368,32 @@ logFile = os.path.join(tagPath, "log.txt")
 url = "http://www.lofter.com/dwr/call/plaincall/TagBean.search.dwr"
 headers = GetHeaders(tag)
 
-try:
-    while True:
+
+while True:
+    try:
         payload = GetPayload(tag, requestPosition, requestTime)
+        LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
         response = requests.post(url=url, data=payload, headers=headers)
         response.encoding = "unicode_escape"
-        LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
         requestPosition += requestNum
         requestTime = ProcessResponseText(response.text)
         if(requestTime == None):
             LogEvent("下载结束")
             break
-except ConnectionError:
-    LogEvent("连接失败", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
-except TimeoutError:
-    LogEvent("连接超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
-except ReadTimeout:
-    LogEvent("读取超时", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
-finally:
-    print("详细内容请查看日志")
+    except (ConnectionError, TimeoutError, ReadTimeout) as e:
+        if isinstance(e, KeyError):
+            errorType = "连接失败"
+        elif isinstance(e, TimeoutError):
+            errorType = "连接超时"
+        else:
+            errorType = "读取超时"
+        
+        LogEvent(errorType, "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+        if isReRequest:
+            time.sleep(reRequestInterval)
+        else:
+            break
+
+print("详细内容请查看日志")
 
 # endregion
