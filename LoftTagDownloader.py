@@ -260,11 +260,11 @@ def ProcessResponseText(text):
                 # 热度小于设定值，跳过
                 continue
 
-            # 先获取博客id
-            blogIdPattern = re.compile(blog + r'\.blogId=([0-9]+);')
-            blogId = blogIdPattern.findall(text)[0]
-            # 再根据博客id，获取用户名
-            blogNickNamePattern = re.compile(blogId + r'.*?blogNickName="(.*?)"')
+            # 先获取博客信息
+            blogInfoPattern = re.compile(blog + r'.blogInfo=(s[0-9]+)')
+            blogInfo = blogInfoPattern.findall(text)[0]
+            # 再根据博客信息，获取用户名
+            blogNickNamePattern = re.compile(blogInfo + r'\.blogNickName="(.*?)"')
             blogNickName = blogNickNamePattern.findall(text)[0]
 
             blogPageUrlPattern = re.compile(blog + r'\.blogPageUrl="(.*?)"')
@@ -368,31 +368,34 @@ logFile = os.path.join(tagPath, "log.txt")
 url = "http://www.lofter.com/dwr/call/plaincall/TagBean.search.dwr"
 headers = GetHeaders(tag)
 
+try:
+    while True:
+        try:
+            payload = GetPayload(tag, requestPosition, requestTime)
+            LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+            response = requests.post(url=url, data=payload, headers=headers)
+            response.encoding = "unicode_escape"
+            requestPosition += requestNum
+            requestTime = ProcessResponseText(response.text)
+            if(requestTime == None):
+                LogEvent("下载结束")
+                break
+        except (ConnectionError, TimeoutError, ReadTimeout) as e:
+            if isinstance(e, KeyError):
+                errorType = "连接失败"
+            elif isinstance(e, TimeoutError):
+                errorType = "连接超时"
+            else:
+                errorType = "读取超时"
 
-while True:
-    try:
-        payload = GetPayload(tag, requestPosition, requestTime)
-        LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
-        response = requests.post(url=url, data=payload, headers=headers)
-        response.encoding = "unicode_escape"
-        requestPosition += requestNum
-        requestTime = ProcessResponseText(response.text)
-        if(requestTime == None):
-            LogEvent("下载结束")
-            break
-    except (ConnectionError, TimeoutError, ReadTimeout) as e:
-        if isinstance(e, KeyError):
-            errorType = "连接失败"
-        elif isinstance(e, TimeoutError):
-            errorType = "连接超时"
-        else:
-            errorType = "读取超时"
-        
-        LogEvent(errorType, "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
-        if isReRequest:
-            time.sleep(reRequestInterval)
-        else:
-            break
+            LogEvent(errorType, "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+            if isReRequest:
+                time.sleep(reRequestInterval)
+            else:
+                break
+
+except KeyboardInterrupt:
+    LogEvent("下载被打断", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
 
 print("详细内容请查看日志")
 
