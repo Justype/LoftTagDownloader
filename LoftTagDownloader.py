@@ -53,11 +53,16 @@ else:
 # region Methods
 
 
-def ProcessBadFileName(fileName):
+def ProcessBadFileName(fileName:str)->str:
+    '''
+    处理不好的文件名？
+    :param fileName:报错的文件名
+    :return:可能能打印的文件名
+    '''
     return repr(fileName)[1:-1]
 
 
-def PrintSave(info):
+def PrintSave(info:str):
     '''
     打印信息，try UnicodeEncodeError
     :param info:信息
@@ -69,7 +74,7 @@ def PrintSave(info):
             print("该作者名称含有非法的Unicode字符，但是正在下载图片，需要时间，请稍候")
 
 
-def LogEvent(logType, logInfo="", isPrintDetail=True):
+def LogEvent(logType:str, logInfo:str="", isPrintDetail:bool=True):
     '''
     记录日志，保存到 ./tag/log.txt 下
     :param logType:日志类型
@@ -86,7 +91,7 @@ def LogEvent(logType, logInfo="", isPrintDetail=True):
         f.close
 
 
-def ValidateFileName(fileName):
+def ValidateFileName(fileName:str)->str:
     '''
     去除非法字符
     :param fileName:文件名
@@ -96,7 +101,7 @@ def ValidateFileName(fileName):
     return re.sub(rstr, "_", fileName)
 
 
-def GetHeaders(tag):
+def GetHeaders(tag:str)->str:
     '''
     :param tag:tag名
     :return:请求需要的 Headers
@@ -115,10 +120,11 @@ def GetHeaders(tag):
     }
 
 
-def GetPayload(tag, start, requestTime):
+def GetPayload(tag:str, requestNum:int, requestPosition:int, requestTime:str)->str:
     '''
     :param tag:tag名
-    :param start:搜索开始位置
+    :param requestNum:每次的请求数
+    :param requestPosition:搜索开始位置
     :param requestTime:最后一个的时间
     :return:请求需要的payload
     '''
@@ -136,13 +142,13 @@ def GetPayload(tag, start, requestTime):
         "c0-param4=boolean:false\n"
         "c0-param5=number:0\n"
         "c0-param6=number:" + str(requestNum) + '\n'     # 每次请求的个数
-        "c0-param7=number:" + str(start) + '\n'           # 当前请求的位置
+        "c0-param7=number:" + str(requestPosition) + '\n'           # 当前请求的位置
         "c0-param8=number:" + requestTime + '\n'             # 开始搜索的时间
         "batchId=123456"
     )
 
 
-def DownloadFile(fullFileName, url):
+def DownloadFile(fullFileName:str, url:str):
     '''
     下载文件
     :param fullFileName:文件名+后缀
@@ -172,7 +178,7 @@ def DownloadFile(fullFileName, url):
                 # LogEvent("文件下载失败"+ str(i), "Url:" + url)
 
 
-def ProcessHtmlLinks(html, fileName, info):
+def ProcessHtmlLinks(html:str, fileName:str, info:str)->str:
     '''
     下载图像链接，返回所有非图片链接
     如果不下载图片链接，返回所有链接
@@ -202,7 +208,7 @@ def ProcessHtmlLinks(html, fileName, info):
     return text
 
 
-def DownloadImgs(fileName, imgLinks):
+def DownloadImgs(fileName:str, imgLinks:str):
     '''
     下载图像链接 列表
     :param fileName:想要保存的文件名（不要后缀）
@@ -219,7 +225,7 @@ def DownloadImgs(fileName, imgLinks):
         counter += 1
 
 
-def ProcessResponseText(text):
+def ProcessResponseText(text:str):
     '''
     处理返回的文本
     :param text:Response文本
@@ -311,12 +317,13 @@ def ProcessResponseText(text):
         if isSortByAuthor:
             # 作者目录
             authorPath = os.path.join(tagPath, legalNickName)
-            ChechPath(authorPath)
+            CheckPath(authorPath)
             fileName = os.path.join(authorPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         else:
             fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         textFile = fileName + ".txt"
 
+        # 防止 OSError 打断下载
         try:
             contentText = BeautifulSoup(content, "html.parser").get_text()
             contentLinks = ProcessHtmlLinks(content, fileName, info)
@@ -346,7 +353,7 @@ def ProcessResponseText(text):
     return publishTime
 
 
-def ChechPath(path):
+def CheckPath(path:str):
     '''
     检查目录，如果不存在，创建
     :param path:路径名
@@ -360,7 +367,7 @@ def ChechPath(path):
 
 # region 目录操作
 tagPath = os.path.join(mainPath, tag)
-ChechPath(tagPath)
+CheckPath(tagPath)
 logFile = os.path.join(tagPath, "log.txt")
 # endregion
 
@@ -371,7 +378,7 @@ headers = GetHeaders(tag)
 try:
     while True:
         try:
-            payload = GetPayload(tag, requestPosition, requestTime)
+            payload = GetPayload(tag, requestNum, requestPosition, requestTime)
             LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
             response = requests.post(url=url, data=payload, headers=headers)
             response.encoding = "unicode_escape"
