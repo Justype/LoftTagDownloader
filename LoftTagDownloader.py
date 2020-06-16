@@ -381,7 +381,7 @@ try:
                 LogEvent("下载结束")
                 break
         except (ConnectionError, TimeoutError, ReadTimeout) as e:
-            if isinstance(e, KeyError):
+            if isinstance(e, ConnectionError):
                 errorType = "连接失败"
             elif isinstance(e, TimeoutError):
                 errorType = "连接超时"
