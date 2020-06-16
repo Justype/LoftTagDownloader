@@ -225,7 +225,7 @@ def DownloadImgs(fileName:str, imgLinks:str):
         counter += 1
 
 
-def ProcessResponseText(text:str):
+def ProcessResponseText(text:str)->str:
     '''
     处理返回的文本
     :param text:Response文本
@@ -323,7 +323,7 @@ def ProcessResponseText(text:str):
             fileName = os.path.join(tagPath, legalNickName + "_" + legalTitle + '_' + legalTime)
         textFile = fileName + ".txt"
 
-        # 防止 OSError 打断下载
+        # 防止 OSError，UnicodeEncodeError 打断下载
         try:
             contentText = BeautifulSoup(content, "html.parser").get_text()
             contentLinks = ProcessHtmlLinks(content, fileName, info)
@@ -346,6 +346,9 @@ def ProcessResponseText(text:str):
                 DownloadImgs(fileName, imgLinks)
         except OSError:
             LogEvent("文件名非法", "Url：" + blogPageUrl, False)
+            continue
+        except UnicodeEncodeError:
+            LogEvent("文件内容含非法字符", "Url：" + blogPageUrl, False)
             continue
         # endregion
         
