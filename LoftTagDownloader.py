@@ -324,11 +324,19 @@ def ProcessResponseText(text:str)->str:
         # region 可能为空的数据
         # 获取 标题
         titlePattern = re.compile(blog + r'\.title="(.*?)";')
-        title = titlePattern.search(text).group(1)
+        titleGroup = titlePattern.search(text)
+        if titleGroup == None:
+            title = ""
+        else:
+            title = titleGroup.group(1)
 
         # 获取 内容
         contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
-        content = contentPattern.search(text).group(1)
+        contentGroup = contentPattern.search(text)
+        if contentGroup == None:
+            content = ""
+        else:
+            content = contentGroup.group(1)
 
         # 获取文章的图片链接
         imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
