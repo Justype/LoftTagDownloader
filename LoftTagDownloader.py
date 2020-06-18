@@ -43,7 +43,7 @@ reRequestInterval = 5   # DWR请求失败后 重新请求的秒数
 while tag == "":
     tag = input("tag：")
 
-imgPattern = re.compile(r'(\.jpg|\.png|\.gif|\.jpeg)')
+imgExtentionPattern = re.compile(r'(\.jpg|\.png|\.gif|\.jpeg)')
 ignoreTagsSet = {tag.lower() for tag in ignoreTags}
 
 if blogMinDate == "":
@@ -199,15 +199,15 @@ def ProcessHtmlLinks(html:str, fileName:str, info:str)->str:
             continue
         if isDownloadLinkImg:
             # 如果链接指向图片，直接下载
-            imgExtencion = imgPattern.findall(linkUrl)
-            if imgExtencion != []:
+            imgExtention = imgExtentionPattern.search(linkUrl)
+            if imgExtention != None:
                 PrintSave(info + "的外链图片")
                 # 可能有的人直接把链接粘到博客中，造成文件名过长
                 if len(linkText) > 20:
-                    DownloadFile(fileName + "外链图片" + str(counter) + imgExtencion[0], linkUrl)
+                    DownloadFile(fileName + "外链图片" + str(counter) + imgExtention.group(1), linkUrl)
                     counter += 1
                     continue
-                DownloadFile(fileName + ValidateFileName(linkText) + imgExtencion[0], linkUrl)
+                DownloadFile(fileName + ValidateFileName(linkText) + imgExtention.group(1), linkUrl)
                 continue
         text += linkText + '\n'
         text += linkUrl + '\n'
@@ -223,11 +223,11 @@ def DownloadImgs(fileName:str, imgLinks:str):
     counter = 0
     while imgLinks != []:
         imgLink = imgLinks.pop(0)
-        imgExtencion = imgPattern.findall(imgLink)
+        imgExtention = imgExtentionPattern.search(imgLink)
         # 有可能没有 要求的后缀名
-        if imgExtencion == []:
+        if imgExtention == None:
             continue
-        DownloadFile(fileName + '_' + str(counter) + imgExtencion[0], imgLink)
+        DownloadFile(fileName + '_' + str(counter) + imgExtention.group(1), imgLink)
         counter += 1
 
 
