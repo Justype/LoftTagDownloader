@@ -172,33 +172,33 @@ def DownloadFile(fullFileName:str, url:str, downloadInfo:str):
             with requests.get(url, headers=headers, timeout=8, stream=True) as r, open(fullFileName, 'wb') as f:
                 # if r.status_code != 200:
                 #     continue
-                total_size = int(r.headers['content-length'])    # 请求文件的大小单位字节B（bytes）
-                if total_size > 1048576:
-                    total_size_str = " 共%.2fMB" % (total_size / 1048576)
+                totalSize = int(r.headers['content-length'])    # 请求文件的大小单位字节B（bytes）
+                if totalSize > 1048576:
+                    totalSizePrompt = " 共%.2fMB" % (totalSize / 1048576)
                 else:
-                    total_size_str = " 共%.2fKB" % (total_size / 1024)
-                print(total_size_str, end='\r')
-                content_size = 0     # 已下载的字节大小
-                start_time = time.time()    # 请求开始的时间
-                temp_size = 0       # 上一秒的下载大小
+                    totalSizePrompt = " 共%.2fKB" % (totalSize / 1024)
+                print(totalSizePrompt, end='\r')
+                contentSize = 0     # 已下载的字节大小
+                startTime = time.time()    # 请求开始的时间
+                lastSize = 0       # 上一秒的下载大小
 
                 # 开始下载每次请求1024字节
                 for content in r.iter_content(chunk_size=1024):
                     f.write(content)
-                    content_size += len(content) # 统计以下载大小
+                    contentSize += len(content) # 统计以下载大小
                     # 每一秒统计一次下载量
-                    time_interval = time.time() - start_time
+                    time_interval = time.time() - startTime
                     if time_interval > 1:
-                        plan = (content_size / total_size) * 100  # 计算下载进度
-                        speed = (content_size - temp_size) / time_interval    # 每秒的下载量
+                        progress = (contentSize / totalSize) * 100  # 计算下载进度
+                        speed = (contentSize - lastSize) / time_interval    # 每秒的下载量
                         
                         if speed < 1048576:    # KB级下载速度处理
-                            print(total_size_str, " %.2f%% %.2fKB/s" %(plan, speed / 1024), end='    \r')
+                            print(totalSizePrompt, " %.2f%% %.2fKB/s" %(progress, speed / 1024), end='    \r')
                         else:   
-                            print(total_size_str, " %.2f%% %.2fMB/s" %(plan, speed / 1048576), end='    \r')
+                            print(totalSizePrompt, " %.2f%% %.2fMB/s" %(progress, speed / 1048576), end='    \r')
 
-                        start_time = time.time()    # 重置开始时间
-                        temp_size = content_size    # 重置以下载大小
+                        startTime = time.time()    # 重置开始时间
+                        lastSize = contentSize    # 重置以下载大小
                 # 下载完成退出函数
                 return
         except (ConnectionError, ReadTimeout, TimeoutError) as e:
