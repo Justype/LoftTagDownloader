@@ -25,15 +25,21 @@ tag = ""  # 标签名，如果不填，在命令行内输入
 
 hotMin = 0          # 最低热度
 blogMinDate = ""    # 最小时间 YYYY-mm-dd
-ignoreTags = [ ]    # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
+ignoreTags = []     # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
+blogMinLength = 0   # 文章最小长度
+
 
 isDownloadBlogImg = False    # 是否下载  博客图片
 isDownloadLinkImg = False    # 是否下载  外链图片
-isDownloadBlogContent = True    #是否下载  文章
-isDownloadBlogWhileItHasImg = True   #如果博客有图片，是否下载文章
-blogMinLength = 0       # 文章最小长度
+isDownloadBlogContent = True  # 是否下载  文章
+isDownloadBlogWhileItHasImg = True  # 如果博客有图片，是否下载文章
+blogImgSize = "原图"    # 下载博客图片的大小 ("缩略图", "小图", "大图", "原图")
 isSortByAuthor = False  # 是否按作者分类
 ```
+
+下载图片大小的对比：
+
+![ImgSize](imgs/ImgSize.png)
 
 ## 如果中途被断了
 

@@ -11,19 +11,20 @@ tag = ""  # 标签名，如果不填，在命令行内输入
 
 hotMin = 0          # 最低热度
 blogMinDate = ""    # 最小时间 YYYY-mm-dd
-ignoreTags = []    # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
+ignoreTags = []     # 想要去除的标签 ['tag1', 'tag2']  不区分大小写
+blogMinLength = 0   # 文章最小长度
 
 
 isDownloadBlogImg = True    # 是否下载  博客图片
 isDownloadLinkImg = True    # 是否下载  外链图片
 isDownloadBlogContent = True  # 是否下载  文章
 isDownloadBlogWhileItHasImg = False  # 如果博客有图片，是否下载文章
-blogMinLength = 0       # 文章最小长度
+blogImgSize = "原图"    # 下载博客图片的大小 ("缩略图", "小图", "大图", "原图")
 isSortByAuthor = False  # 是否按作者分类
 
 
 # 下载目录 可换成自己想要的,  默认：桌面/Lofter
-mainPath = os.path.join(os.path.expanduser('~'), "Desktop", "Lofter")
+mainPath = os.path.expanduser("~\\Desktop\\Lofter")
 # mainPath = "D:\\Lofter"
 
 # 如果断了可以看 日志，然后修改下面两个继续
@@ -31,7 +32,6 @@ requestPosition = 0     # 请求位置      默认 0      每次递增 请求数
 requestTime = '0'       # 请求博客的时间      默认 '0'
 requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连；如果每次请求过多，正则处理的慢。
-isPrintEverySave = True    # 是否打印每次的保存信息
 
 isReRequest = True      # DWR请求失败后 是否重新请求
 reRequestInterval = 5   # DWR请求失败后 重新请求的秒数
@@ -45,6 +45,14 @@ while tag == "":
 
 imgExtentionPattern = re.compile(r'(\.jpg|\.png|\.gif|\.jpeg)')
 ignoreTagsSet = {tag.lower() for tag in ignoreTags}
+
+imgLinksRegexDict = {
+    "缩略图" : r'"small":"(.+?)"',
+    "小图" : r'"middle":"(.+?)"',
+    "大图" : r'"orign":"(.+?)"',
+    "原图" : r'"raw":"(.+?)"',
+}
+imgLinksRegex = imgLinksRegexDict[blogImgSize]
 
 if blogMinDate == "":
     blogMinTime = 0.0
@@ -62,16 +70,15 @@ def ProcessBadFileName(fileName:str)->str:
     return repr(fileName)[1:-1]
 
 
-def PrintSave(info:str):
+def PrintSave(saveInfo:str):
     '''
     打印信息，try UnicodeEncodeError
-    :param info:信息
+    :param saveInfo:信息
     '''
-    if isPrintEverySave:
-        try:
-            print(info)
-        except UnicodeEncodeError:
-            print("该作者名称含有非法的Unicode字符，但是正在下载图片，需要时间，请稍候")
+    try:
+        print(saveInfo)
+    except UnicodeEncodeError:
+        print(" 该作者名称含有非法的Unicode字符，但是正在下载图片，需要时间，请稍候")
 
 
 def LogEvent(logType:str, logInfo:str="", isPrintDetail:bool=True):
@@ -148,23 +155,50 @@ def GetPayload(tag:str, requestNum:int, requestPosition:int, requestTime:str)->s
     )
 
 
-def DownloadFile(fullFileName:str, url:str):
+def DownloadFile(fullFileName:str, url:str, downloadInfo:str):
     '''
     下载文件
     :param fullFileName:文件名+后缀
-    :url:文件url
+    :param url:文件url
+    :param downloadInfo:下载的信息
     '''
     if os.path.exists(fullFileName):
         return
+    PrintSave(downloadInfo)
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.146 Safari/537.36'}
     for i in range(3):
         try:
-            fileResponse = requests.get(url, headers=headers, timeout=20)
-            if fileResponse.status_code == 200:
-                with open(fullFileName, 'wb') as f:
-                    f.write(fileResponse.content)
-                    f.close()
+            with requests.get(url, headers=headers, timeout=8, stream=True) as r, open(fullFileName, 'wb') as f:
+                # if r.status_code != 200:
+                #     continue
+                total_size = int(r.headers['content-length'])    # 请求文件的大小单位字节B（bytes）
+                if total_size > 1048576:
+                    total_size_str = " 共%.2fMB" % (total_size / 1048576)
+                else:
+                    total_size_str = " 共%.2fKB" % (total_size / 1024)
+                print(total_size_str, end='\r')
+                content_size = 0     # 已下载的字节大小
+                start_time = time.time()    # 请求开始的时间
+                temp_size = 0       # 上一秒的下载大小
+
+                # 开始下载每次请求1024字节
+                for content in r.iter_content(chunk_size=1024):
+                    f.write(content)
+                    content_size += len(content) # 统计以下载大小
+                    # 每一秒统计一次下载量
+                    time_interval = time.time() - start_time
+                    if time_interval > 1:
+                        plan = (content_size / total_size) * 100  # 计算下载进度
+                        speed = (content_size - temp_size) / time_interval    # 每秒的下载量
+                        
+                        if speed < 1048576:    # KB级下载速度处理
+                            print(total_size_str, " %.2f%% %.2fKB/s" %(plan, speed / 1024), end='    \r')
+                        else:   
+                            print(total_size_str, " %.2f%% %.2fMB/s" %(plan, speed / 1048576), end='    \r')
+
+                        start_time = time.time()    # 重置开始时间
+                        temp_size = content_size    # 重置以下载大小
                 # 下载完成退出函数
                 return
         except (ConnectionError, ReadTimeout, TimeoutError) as e:
@@ -201,24 +235,25 @@ def ProcessHtmlLinks(html:str, fileName:str, info:str)->str:
             # 如果链接指向图片，直接下载
             imgExtention = imgExtentionPattern.search(linkUrl)
             if imgExtention != None:
-                PrintSave(info + "的外链图片")
+                linkImgInfo = info + "的外链图片"
                 # 可能有的人直接把链接粘到博客中，造成文件名过长
                 if len(linkText) > 20:
-                    DownloadFile(fileName + "外链图片" + str(counter) + imgExtention.group(1), linkUrl)
+                    DownloadFile(fileName + "外链图片" + str(counter) + imgExtention.group(1), linkUrl, linkImgInfo)
                     counter += 1
                     continue
-                DownloadFile(fileName + ValidateFileName(linkText) + imgExtention.group(1), linkUrl)
+                DownloadFile(fileName + ValidateFileName(linkText) + imgExtention.group(1), linkUrl, linkImgInfo)
                 continue
         text += linkText + '\n'
         text += linkUrl + '\n'
     return text
 
 
-def DownloadImgs(fileName:str, imgLinks:str):
+def DownloadImgs(fileName:str, imgLinks:str, imgInfo:str):
     '''
     下载图像链接 列表
     :param fileName:想要保存的文件名（不要后缀）
     :param imgLinks:图像链接 列表
+    :param imgInfo:图片信息前缀
     '''
     counter = 0
     while imgLinks != []:
@@ -227,7 +262,7 @@ def DownloadImgs(fileName:str, imgLinks:str):
         # 有可能没有 要求的后缀名
         if imgExtention == None:
             continue
-        DownloadFile(fileName + '_' + str(counter) + imgExtention.group(1), imgLink)
+        DownloadFile(fileName + '_' + str(counter) + imgExtention.group(1), imgLink, imgInfo + str(counter))
         counter += 1
 
 
@@ -297,19 +332,22 @@ def ProcessResponseText(text:str)->str:
 
         # 获取文章的图片链接
         imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
-        imgList = imgListPattern.findall(text)
-        if(imgList):
-            imgLinksPattern = re.compile(r'"orign":"(.+?)"')
-            imgLinks = imgLinksPattern.findall(imgList[0])
+        imgList = imgListPattern.search(text)
+        if imgList != None:
+            imgLinksPattern = re.compile(imgLinksRegex)
+            imgLinks = imgLinksPattern.findall(imgList.group(1))
+            rawImgLinksPattern = re.compile(r'"raw":"(.+?)"')
+            rawImgLinks = rawImgLinksPattern.findall(imgList.group(1))
         else:
             imgLinks = []
+            rawImgLinks = []
         # endregion
 
         #region 名称合法化
         legalNickName = ValidateFileName(blogNickName)
         legalTitle = ValidateFileName(title)
         legalTime = ValidateFileName(readablePublishTime)
-        info = "正在保存：作者=" + legalNickName + "\t时间=" + readablePublishTime
+        info = " 正在保存：作者=" + legalNickName + "\t时间=" + readablePublishTime
         #endregion
 
         # region 保存数据
@@ -338,11 +376,10 @@ def ProcessResponseText(text:str)->str:
                     f.write("Url：" + blogPageUrl + '\n')
                     f.write("内容：\n" + contentText + contentLinks + '\n')
                     f.write("文章图像链接：\n")
-                    f.writelines(imgLinks)
-                    f.close()
+                    f.writelines(rawImgLinks)
             if isDownloadBlogImg:
-                PrintSave(info + "的图片")
-                DownloadImgs(fileName, imgLinks)
+                imgInfo = info + "的图片"
+                DownloadImgs(fileName, imgLinks, imgInfo)
         except OSError:
             LogEvent("文件名非法", "Url：" + blogPageUrl, False)
             continue
@@ -382,10 +419,10 @@ try:
         try:
             payload = GetPayload(tag, requestNum, requestPosition, requestTime)
             LogEvent("开始请求", "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
-            response = requests.post(url=url, data=payload, headers=headers)
-            response.encoding = "unicode_escape"
-            requestPosition += requestNum
-            requestTime = ProcessResponseText(response.text)
+            with requests.post(url=url, data=payload, headers=headers) as r:
+                r.encoding = "unicode_escape"
+                requestPosition += requestNum
+                requestTime = ProcessResponseText(r.text)
             if(requestTime == None):
                 LogEvent("下载结束")
                 break
@@ -399,8 +436,9 @@ try:
 
             LogEvent(errorType, "requestPosition= " + str(requestPosition) + ", requestTime= " + requestTime)
             if isReRequest:
-                print("停止" + str(reRequestInterval) + "秒，再次请求")
-                time.sleep(reRequestInterval)
+                for i in range(int(reRequestInterval), 0, -1):
+                    print(" 请求暂停，" + str(i) + "秒后，再次请求", end='\r')
+                    time.sleep(1)
             else:
                 break
 
