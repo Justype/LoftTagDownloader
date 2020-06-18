@@ -189,6 +189,7 @@ def ProcessHtmlLinks(html:str, fileName:str, info:str)->str:
     '''
     links = BeautifulSoup(html, "html.parser").find_all("a")
     text = "\n=====================\n"
+    counter = 1
     for link in links:
         linkText = link.get_text()
         # a标签内可能无链接
@@ -201,6 +202,11 @@ def ProcessHtmlLinks(html:str, fileName:str, info:str)->str:
             imgExtencion = imgPattern.findall(linkUrl)
             if imgExtencion != []:
                 PrintSave(info + "的外链图片")
+                # 可能有的人直接把链接粘到博客中，造成文件名过长
+                if len(linkText) > 20:
+                    DownloadFile(fileName + "外链图片" + str(counter) + imgExtencion[0], linkUrl)
+                    counter += 1
+                    continue
                 DownloadFile(fileName + ValidateFileName(linkText) + imgExtencion[0], linkUrl)
                 continue
         text += linkText + '\n'
@@ -242,7 +248,7 @@ def ProcessResponseText(text:str)->str:
             # region 不可能为空的数据
             # 获取 发布时间
             publishTimePattern = re.compile(blog + r'\.publishTime=([0-9]+);')
-            publishTime = publishTimePattern.findall(text)[0]
+            publishTime = publishTimePattern.search(text).group(1)
             # 小于规定时间，结束
             if int(publishTime) < blogMinTime:
                 return None
@@ -251,8 +257,8 @@ def ProcessResponseText(text:str)->str:
                 "%Y-%m-%d %H:%M:%S", time.localtime(float(publishTime)/1000))
 
             # 获取 tag
-            tagsPattern = re.compile(blog + r'\.tag="(.*?)";')
-            tags = tagsPattern.findall(text)[0]
+            tagsPattern = re.compile(blog + r'\.tag="(.+?)";')
+            tags = tagsPattern.search(text).group(1)
             if len(ignoreTagsSet) > 0:
                 tagsList = tags.lower().split(',')
                 # 如果 tag有交集， 跳过
@@ -261,46 +267,39 @@ def ProcessResponseText(text:str)->str:
 
             # 获取热度
             hotPattern = re.compile(blog + r'\.hot=([0-9]+);')
-            hot = hotPattern.findall(text)[0]
+            hot = hotPattern.search(text).group(1)
             if int(hot) < hotMin:
                 # 热度小于设定值，跳过
                 continue
 
             # 先获取博客信息
             blogInfoPattern = re.compile(blog + r'.blogInfo=(s[0-9]+)')
-            blogInfo = blogInfoPattern.findall(text)[0]
+            blogInfo = blogInfoPattern.search(text).group(1)
             # 再根据博客信息，获取用户名
-            blogNickNamePattern = re.compile(blogInfo + r'\.blogNickName="(.*?)"')
-            blogNickName = blogNickNamePattern.findall(text)[0]
+            blogNickNamePattern = re.compile(blogInfo + r'\.blogNickName="(.+?)"')
+            blogNickName = blogNickNamePattern.search(text).group(1)
 
-            blogPageUrlPattern = re.compile(blog + r'\.blogPageUrl="(.*?)"')
-            blogPageUrl = blogPageUrlPattern.findall(text)[0]
+            blogPageUrlPattern = re.compile(blog + r'\.blogPageUrl="(.+?)"')
+            blogPageUrl = blogPageUrlPattern.search(text).group(1)
             # endregion
-        except IndexError:
+        # .search 找不到值会返回None，调用其下方法，会报 AttributeError
+        except AttributeError:
             continue
             
         # region 可能为空的数据
         # 获取 标题
         titlePattern = re.compile(blog + r'\.title="(.*?)";')
-        title = titlePattern.findall(text)
-        if(title):
-            title = title[0]
-        else:
-            title = ""
+        title = titlePattern.search(text).group(1)
 
         # 获取 内容
         contentPattern = re.compile(blog + r'\.content="(.*?)";', re.S)
-        content = contentPattern.findall(text)
-        if(content):
-            content = content[0]
-        else:
-            content = ""
+        content = contentPattern.search(text).group(1)
 
         # 获取文章的图片链接
         imgListPattern = re.compile(blog + r'\.originPhotoLinks="\[(.*?)\]"')
         imgList = imgListPattern.findall(text)
         if(imgList):
-            imgLinksPattern = re.compile(r'"orign":"(.*?)"')
+            imgLinksPattern = re.compile(r'"orign":"(.+?)"')
             imgLinks = imgLinksPattern.findall(imgList[0])
         else:
             imgLinks = []
@@ -398,8 +397,9 @@ try:
             else:
                 errorType = "读取超时"
 
-            LogEvent(errorType, "requestPosition= "+str(requestPosition) + ", requestTime= " + requestTime)
+            LogEvent(errorType, "requestPosition= " + str(requestPosition) + ", requestTime= " + requestTime)
             if isReRequest:
+                print("停止" + str(reRequestInterval) + "秒，再次请求")
                 time.sleep(reRequestInterval)
             else:
                 break
