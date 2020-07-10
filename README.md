@@ -1,6 +1,10 @@
 # LoftTagDownloader
 根据Tag下载Lofter的文章、图片、外链图片
 
+## 注意
+
+由于已经用[Xamarin](https://github.com/xamarin/Xamarin.Forms)实现了：[LofterDownloader](https://github.com/justype/LofterDownloader)，所以目前此项目已经停止维护了，有一些Bug发现了，但没改。
+
 ## 需要安装的库
 | 库名       | 命令                         |
 | ---------- | ---------------------------- |
