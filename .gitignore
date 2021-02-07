@@ -1,0 +1,11 @@
+# 只保留资源文件夹下的 文件
+*.jpg
+*.png
+*.gif
+*.txt
+*.html
+!/imgs/*
+!/assets/*
+
+# VS Code 自动生成的文件夹
+/.vscode/*
