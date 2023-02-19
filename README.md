@@ -5,6 +5,8 @@
 
 由于已经用[Xamarin](https://github.com/xamarin/Xamarin.Forms)实现了：[LofterDownloader](https://github.com/justype/LofterDownloader)，所以目前此项目已经停止维护了，有一些Bug发现了，但没改。
 
+目前如果100个/次请求，到10000就会停止，可以请求10000000.../次，但连接时间会超长。
+
 ## 需要安装的库
 | 库名       | 命令                         |
 | ---------- | ---------------------------- |
