@@ -10,6 +10,8 @@
 
 ## loft_mobile_hot_tag.py
 
+[B站视频](https://www.bilibili.com/video/BV1uTjizGEpK/)
+
 根据热门，统计数据，下载文章与图片 （目前不处理视频）
 
 如果你想要的Tag有很多博文，建议按 月 1/2 博文类型 逐个解析，这样能获取最多的内容，有能力也可以自己写个循环
