@@ -2,9 +2,11 @@
 
 根据Tag下载Lofter的文章、图片、外链图片 (仅[LoftTagDownloader.py](./LoftTagDownloader.py)支持外链图片)
 
-> [!NOTE] 注意
->
-> 目前由于Lofter服务器端做了限制，任何组合只能获取到前1000的数据（网页与手机都只能刷到第1000个）
+<a target="_blank" href="https://colab.research.google.com/github/Justype/LoftTagDownloader/blob/master/ipynb/loft_mobile_hot_tag.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a> 直接在Google Colab中使用 loft_mobile_hot_tag.py
+
+## ℹ️ 注意
+
+目前由于Lofter服务器端做了限制，任何组合只能获取到前1000的数据（网页与手机都只能刷到第1000个）
 
 ## loft_mobile_hot_tag.py
 

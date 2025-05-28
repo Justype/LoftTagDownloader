@@ -190,6 +190,9 @@ def custom_filter(
         elif type == 2 and not is_write_image_txt and not is_download_image:
             n_post_type_skipped += 1
             return False
+        elif type == 4: # 视频类型 直接跳过
+            n_post_type_skipped += 1
+            return False
 
     # 热度大于 你设定的值
     if hot_count < min_hot:
