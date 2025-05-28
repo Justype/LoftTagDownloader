@@ -7,5 +7,8 @@
 !/imgs/*
 !/assets/*
 
+# 删除输出目录
+output/*
+
 # VS Code 自动生成的文件夹
 /.vscode/*

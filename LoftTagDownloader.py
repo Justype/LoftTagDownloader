@@ -1,7 +1,6 @@
-import os
-import re
-import requests
-import time
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import os, re, requests, time
 from bs4 import BeautifulSoup
 from urllib import parse
 from requests import ReadTimeout, ConnectionError
@@ -29,7 +28,7 @@ mainPath = os.path.expanduser("~\\Desktop\\Lofter")
 
 # 如果断了可以看 日志，然后修改下面两个继续
 requestPosition = 0     # 请求位置      默认 0      每次递增 请求数
-requestTime = '0'       # 请求博客的时间      默认 '0'
+requestTime = '0'       # 请求博客的时间      默认 '0'   无法影响请求位置
 requestNum = 100        # 每次请求博客的个数
 # 如果请求过于频繁，会被断连；如果每次请求过多，正则处理的慢。
 
