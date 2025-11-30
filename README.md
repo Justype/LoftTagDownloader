@@ -8,6 +8,24 @@
 
 目前由于Lofter服务器端做了限制，任何组合只能获取到前1000的数据（网页与手机都只能刷到第1000个）
 
+### 8.2.36 版本
+
+在 8.2.36 版本中，可以按时间范围（以天为单位）获取最热数据，但是范围不能超过 30 天，详情请见：[loft_mobile_hot_tag.py](./loft_mobile_hot_tag.py) 中的 `get_hot_tag_payload_timestamp` 函数。
+
+使用方法：
+
+```python
+data = get_hot_tag_payload_timestamp(
+    tag = tag_name,
+    offset= offset,
+    post_types = post_types,
+    post_start_timestamp = datetimestring_to_ts_ms("2025-01-01"),
+    post_end_timestamp = datetimestring_to_ts_ms("2025-01-02")
+    # 时间差不能超过30天 即使写31，也只能获取从开始时间+30天的数据
+    # 最好用于获取某一天或某一周的最热数据，不能用于获取一个月的数据
+)
+```
+
 ## loft_mobile_hot_tag.py
 
 根据热门，统计数据，下载文章与图片 （目前不处理视频）
@@ -137,6 +155,6 @@ requestNum = 100        # 每次请求博客的个数
 
 如果还有其他问题，请提交issue
 
-## 大家觉得喜欢，请Star本项目
+## 免责声明
 
-使用爬虫的时候，建议给`python.exe`添加限速，以免影响他人正常用网
+本工具仅供学习与研究使用，请勿用于商业用途。请遵守相关法律法规及网站的使用条款。如因使用本工具而产生的任何法律责任，均由使用者自行承担。

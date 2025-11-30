@@ -489,7 +489,9 @@ def get_post_types_name(post_types: str) -> str:
     type_map = {
         "1": "文字",
         "2": "图片",
+        "3": "音乐",
         "4": "视频",
+        "6": "资讯？",
     }
 
     return type_map.get(str(post_types), "所有")
@@ -566,7 +568,7 @@ def get_headers() -> dict:
         "Accept-Language": "zh-CN,zh;q=0.9",
         "Connection": "keep-alive",
         "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
-        "User-Agent": "User-Agent: LOFTER-Android 8.1.28 (V2309A; Android 9; null) WIFI"
+        "User-Agent": "User-Agent: LOFTER-Android 8.2.36 (V2309A; Android 9; null) WIFI"
     }
 
 def get_hot_tag_payload(tag: str, offset:int = 0, post_types = "", post_year_month: int = 0) -> dict:
@@ -583,7 +585,7 @@ def get_hot_tag_payload(tag: str, offset:int = 0, post_types = "", post_year_mon
         dict: 用于 POST 请求的参数字典。
     """
     return {
-        "product": "lofter-android-8.1.28",
+        "product": "lofter-android-8.2.36",
         "postTypes": post_types, # 空：全部 1：文字 2：图片
         "offset": offset,
         "postYm": post_year_month if post_year_month != 0 else "",
@@ -595,6 +597,85 @@ def get_hot_tag_payload(tag: str, offset:int = 0, post_types = "", post_year_mon
         "style": 0,
         "tag": tag,
         "type": "total", # "total"：全部 "date": 日榜 "week": 周榜 "month": 月榜
+    }
+
+def datetime_to_ts_ms(dt: datetime) -> int:
+    """
+    将 datetime 对象转换为时间戳（毫秒）。
+
+    Args:
+        dt (datetime): 要转换的 datetime 对象。
+
+    Returns:
+        int: 对应的时间戳，单位为毫秒。
+    """
+    return int(dt.timestamp() * 1000)
+
+def ts_ms_to_datetime_string(ts_ms: int) -> str:
+    """
+    将时间戳（毫秒）转换为日期时间字符串。
+
+    Args:
+        ts_ms (int): 时间戳，单位为毫秒。
+
+    Returns:
+        str: 对应的日期时间字符串，格式为 "YYYY-MM-DD HH:MM:SS"。
+    """
+    dt = datetime.fromtimestamp(ts_ms / 1000)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+def datetimestring_to_ts_ms(date_string: str) -> int:
+    """
+    将时间字符串转换为时间戳（毫秒） YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS
+
+    Args:
+        date_string (str): 时间字符串，格式为 "YYYY-MM-DD" 或 "YYYY-MM-DD HH:MM:SS"。
+
+    Returns:
+        int: 对应的时间戳，单位为毫秒。
+    """
+    if len(date_string) == 19:  # 包含时间部分
+        dt = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+    else:  # 仅包含日期部分
+        dt = datetime.strptime(date_string, "%Y-%m-%d")
+    return datetime_to_ts_ms(dt)
+
+def get_hot_tag_payload_timestamp(tag: str, post_start_timestamp: int, post_end_timestamp: int, offset:int = 0, post_types = "") -> dict:
+    """
+    构建请求标签列表接口的 POST 数据负载。
+
+    Args:
+        tag (str): 标签名称。
+        post_start_timestamp (int): 博文开始时间戳，单位毫秒。
+        post_end_timestamp (int): 博文结束时间戳，单位毫秒。
+        offset (int, optional): 请求偏移量，默认从0开始，-1表示无内容。
+        post_types (str, optional): 文章类型过滤，空字符串代表全部，"1"代表文字，"2"代表图片。
+
+    Returns:
+        dict: 用于 POST 请求的参数字典。
+    """
+    if post_end_timestamp - post_start_timestamp < 0 or post_end_timestamp - post_start_timestamp > 2592000000:
+        raise ValueError("时间范围必须在30天之内，且结束时间必须大于开始时间")
+
+    current_time_ms = datetime_to_ts_ms(datetime.now())
+    lastposttime = max(current_time_ms, post_end_timestamp)
+
+    return {
+        "product": "lofter-android-8.2.36",
+        "lastposttime": lastposttime,
+        "offset": offset,
+        "postYm": "",
+        "returnGiftCombination": "",
+        "range": 0,
+        "firstpermalink": "null",
+        "type": "total",
+        "postTypes": post_types, # 空：全部 1：文字 2：图片
+        "postYmdEt": post_end_timestamp,
+        "recentDay": 0,
+        "protectedFlag": 0,
+        "style": 0,
+        "postYmdSt": post_start_timestamp,
+        "tag": tag,
     }
 
 def get_post_detail_payload(tag, post_id, blog_id, blog_user_name: str) -> dict:
@@ -760,7 +841,7 @@ def get_backup_dict_from_info_dict(info_dict: dict) -> dict:
             # 用户的昵称 （显示的名字）
             'blog_user_nickname': info_dict['blogInfo']['blogNickName'],
             # 博文发出时间
-            'publish_datetime':   datetime.fromtimestamp(info_dict['postData']['postView']['publishTime'] / 1000).strftime("%Y-%m-%d %H:%M:%S"),
+            'publish_datetime':   ts_ms_to_datetime_string(info_dict['postData']['postView']['publishTime']),
             # 博文发出时间戳 ms 毫秒
             'publish_timestamp':  info_dict['postData']['postView']['publishTime'],
             # 所有标签 （是List）
@@ -803,7 +884,7 @@ def fetch_details_if_pass_filter(backup_list: list[dict], max_workers: int = 4) 
     """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# 找出需要抓取详情的项（记录其原始索引）
+    # 找出需要抓取详情的项（记录其原始索引）
     detail_tasks = [
         (idx, item) for idx, item in enumerate(backup_list)
         if not item.get("has_detail", False) and custom_filter(**item)
